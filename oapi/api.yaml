@@ -1,0 +1,38 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Abandoned Factory Todo Lists
+  servers:
+    - url: http://localhost:8080/
+paths:
+  /lists:
+    get:
+      tags:
+        - lists
+      summary: Get list of Todo Lists for a user
+      operationId: getLists
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetListsResponse'
+components:
+  schemas:
+    # base types
+    ListDescription:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+    GetListsResponse:
+      type: object
+      properties:
+        lists:
+          type: array
+          items:
+            $ref: '#/components/schemas/ListDescription'

@@ -1,0 +1,6 @@
+# yaml-language-server: $schema=../../../oapi/configuration-schema.json
+package: api
+output: todolist.gen.go
+generate:
+  models: true
+  chi-server: true

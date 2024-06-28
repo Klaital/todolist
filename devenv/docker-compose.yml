@@ -1,0 +1,40 @@
+version: '3.8'
+services:
+#  af_todo:
+#    container_name: af_todo
+#    build:
+#      context: .
+#      target: dev
+#    ports:
+#      - 8180:8080
+#      - 9100:9000
+#      - 8181:8081
+#      - 9101:9001
+#      - 8182:8082
+#      - 9102:9002
+#    links:
+#      - postgres-klaital
+#      - sessionstore-klaital
+#    depends_on:
+#      - postgres-klaital
+#      - sessionstore-klaital
+#    env_file:
+#      - run/.env
+#    networks:
+#      - klaital_net
+#        #    volumes:
+#      #- .:/app:rw,delegated
+
+  postgres-todo:
+    image: postgres:16.1
+    ports:
+      - "5431:5432"
+    env_file: postgres.env
+    volumes:
+      - .:/docker-entrypoint-initdb.d
+    command: ["postgres", "-c", "log_statement=all"]
+
+  sessionstore-todo:
+    image: redis:7-alpine
+    ports:
+      - "6378:6379"
