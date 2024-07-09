@@ -1,27 +1,30 @@
 package main
 
 import (
-	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/mux"
 	"github.com/klaital/todolist/cmd/server/api"
-	"log/slog"
 	"net/http"
-	"os"
 )
 
 func main() {
 	server := api.NewServer()
 
-	r := chi.NewMux()
-
-	h := api.HandlerFromMux(server, r)
-
-	s := &http.Server{
-		Handler: h,
-		Addr:    "0.0.0.0:8080",
+	router := mux.NewRouter()
+	spa := spaHandler{
+		staticPath: "web/todo/dist",
+		indexPath:  "index.html",
 	}
+	router.PathPrefix("/web").Handler(spa)
 
-	if err := s.ListenAndServe(); err != nil {
-		slog.Error(err.Error())
-		os.Exit(1)
+	srv := api.NewServer()
+	h := api.HandlerFromMux(&srv, router)
+
+	c := cors.New(cors.Options{
+		AllowedOrigins: []string{"http://localhost:3000", "http://localhost:8080", "http://bedroom-tv"},
+		AllowedMethods: []string{"GET", "PUT"},
+	})
+	s := &http.Server{
+		Handler: c.Handler(h),
+		Addr:    "0.0.0.0:8080",
 	}
 }

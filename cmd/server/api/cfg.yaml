@@ -3,4 +3,4 @@ package: api
 output: todolist.gen.go
 generate:
   models: true
-  chi-server: true
+  gorilla-server: true

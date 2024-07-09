@@ -5,6 +5,37 @@ info:
   servers:
     - url: http://localhost:8080/
 paths:
+  /chores:
+    get:
+      tags:
+        - chores
+      summary: Get list of all chores for a user
+      operationId: getChores
+      responses:
+        '200':
+          description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ListChoresResponse'
+  /chores/{choreId}/completed:
+    put:
+      tags:
+        - chores
+      summary: Mark this chore as having been completed just now
+      operationId: markChoreCompleted
+      parameters:
+        - name: choreId
+          in: path
+          description: ID of chore completed
+          required: true
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '204':
+          description: success
+
   /lists:
     get:
       tags:
@@ -20,7 +51,31 @@ paths:
                 $ref: '#/components/schemas/GetListsResponse'
 components:
   schemas:
-    # base types
+    Chore:
+      type: object
+      required:
+        - id
+        - name
+        - last_completed
+        - next_deadline
+      properties:
+        id:
+          type: number
+          format: int64
+        name:
+          type: string
+        last_completed:
+          type: number
+        next_deadline:
+          type: number
+    ListChoresResponse:
+      type: object
+      properties:
+        chores:
+          type: array
+          items:
+            $ref: '#/components/schemas/Chore'
+
     ListDescription:
       type: object
       properties:
