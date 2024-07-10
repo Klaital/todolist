@@ -1,3 +1,5 @@
+"use client"
+
 import TopHeader from "@/app/header/header";
 import ChoresPage from "@/app/chores/page";
 import {Chore} from "@/app/chores/chores";

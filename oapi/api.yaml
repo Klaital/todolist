@@ -33,8 +33,12 @@ paths:
             type: integer
             format: int64
       responses:
-        '204':
+        '200':
           description: success
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chore'
 
   /lists:
     get:
@@ -60,16 +64,20 @@ components:
         - next_deadline
       properties:
         id:
-          type: number
+          type: integer
           format: int64
         name:
           type: string
         last_completed:
-          type: number
+          type: integer
+          format: int64
         next_deadline:
-          type: number
+          type: integer
+          format: int64
     ListChoresResponse:
       type: object
+      required:
+        - chores
       properties:
         chores:
           type: array

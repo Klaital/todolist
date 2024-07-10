@@ -34,16 +34,17 @@ export default function ChoresPage() {
             last_completed: Date.now() - (1000 * 60 * 60 * 24 * 2),
         }
     ])
-
-    useEffect(() => {
-        getChores()
-            .then((resp) => {
-                setChores(resp.chores!)
-            })
-            .catch(e => {
-                console.error(e)
-            })
-    }, [])
+    //
+    // useEffect(() => {
+    //     getChores()
+    //         .then((resp) => {
+    //             console.log(resp)
+    //             setChores(resp.chores!)
+    //         })
+    //         .catch(e => {
+    //             console.error(e)
+    //         })
+    // }, [])
 
 
     return (

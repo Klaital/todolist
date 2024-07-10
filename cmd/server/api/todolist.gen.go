@@ -7,13 +7,27 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/go-chi/chi/v5"
+	"github.com/gorilla/mux"
+	"github.com/oapi-codegen/runtime"
 	openapi_types "github.com/oapi-codegen/runtime/types"
 )
+
+// Chore defines model for Chore.
+type Chore struct {
+	Id            int64  `json:"id"`
+	LastCompleted int64  `json:"last_completed"`
+	Name          string `json:"name"`
+	NextDeadline  int64  `json:"next_deadline"`
+}
 
 // GetListsResponse defines model for GetListsResponse.
 type GetListsResponse struct {
 	Lists *[]ListDescription `json:"lists,omitempty"`
+}
+
+// ListChoresResponse defines model for ListChoresResponse.
+type ListChoresResponse struct {
+	Chores []Chore `json:"chores"`
 }
 
 // ListDescription defines model for ListDescription.
@@ -24,19 +38,15 @@ type ListDescription struct {
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// Get list of all chores for a user
+	// (GET /chores)
+	GetChores(w http.ResponseWriter, r *http.Request)
+	// Mark this chore as having been completed just now
+	// (PUT /chores/{choreId}/completed)
+	MarkChoreCompleted(w http.ResponseWriter, r *http.Request, choreId int64)
 	// Get list of Todo Lists for a user
 	// (GET /lists)
 	GetLists(w http.ResponseWriter, r *http.Request)
-}
-
-// Unimplemented server implementation that returns http.StatusNotImplemented for each endpoint.
-
-type Unimplemented struct{}
-
-// Get list of Todo Lists for a user
-// (GET /lists)
-func (_ Unimplemented) GetLists(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusNotImplemented)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -47,6 +57,47 @@ type ServerInterfaceWrapper struct {
 }
 
 type MiddlewareFunc func(http.Handler) http.Handler
+
+// GetChores operation middleware
+func (siw *ServerInterfaceWrapper) GetChores(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.GetChores(w, r)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
+
+// MarkChoreCompleted operation middleware
+func (siw *ServerInterfaceWrapper) MarkChoreCompleted(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	var err error
+
+	// ------------- Path parameter "choreId" -------------
+	var choreId int64
+
+	err = runtime.BindStyledParameterWithOptions("simple", "choreId", mux.Vars(r)["choreId"], &choreId, runtime.BindStyledParameterOptions{Explode: false, Required: true})
+	if err != nil {
+		siw.ErrorHandlerFunc(w, r, &InvalidParamFormatError{ParamName: "choreId", Err: err})
+		return
+	}
+
+	handler := http.Handler(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		siw.Handler.MarkChoreCompleted(w, r, choreId)
+	}))
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler.ServeHTTP(w, r.WithContext(ctx))
+}
 
 // GetLists operation middleware
 func (siw *ServerInterfaceWrapper) GetLists(w http.ResponseWriter, r *http.Request) {
@@ -134,36 +185,36 @@ func (e *TooManyValuesForParamError) Error() string {
 
 // Handler creates http.Handler with routing matching OpenAPI spec.
 func Handler(si ServerInterface) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{})
+	return HandlerWithOptions(si, GorillaServerOptions{})
 }
 
-type ChiServerOptions struct {
+type GorillaServerOptions struct {
 	BaseURL          string
-	BaseRouter       chi.Router
+	BaseRouter       *mux.Router
 	Middlewares      []MiddlewareFunc
 	ErrorHandlerFunc func(w http.ResponseWriter, r *http.Request, err error)
 }
 
 // HandlerFromMux creates http.Handler with routing matching OpenAPI spec based on the provided mux.
-func HandlerFromMux(si ServerInterface, r chi.Router) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
+func HandlerFromMux(si ServerInterface, r *mux.Router) http.Handler {
+	return HandlerWithOptions(si, GorillaServerOptions{
 		BaseRouter: r,
 	})
 }
 
-func HandlerFromMuxWithBaseURL(si ServerInterface, r chi.Router, baseURL string) http.Handler {
-	return HandlerWithOptions(si, ChiServerOptions{
+func HandlerFromMuxWithBaseURL(si ServerInterface, r *mux.Router, baseURL string) http.Handler {
+	return HandlerWithOptions(si, GorillaServerOptions{
 		BaseURL:    baseURL,
 		BaseRouter: r,
 	})
 }
 
 // HandlerWithOptions creates http.Handler with additional options
-func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handler {
+func HandlerWithOptions(si ServerInterface, options GorillaServerOptions) http.Handler {
 	r := options.BaseRouter
 
 	if r == nil {
-		r = chi.NewRouter()
+		r = mux.NewRouter()
 	}
 	if options.ErrorHandlerFunc == nil {
 		options.ErrorHandlerFunc = func(w http.ResponseWriter, r *http.Request, err error) {
@@ -176,9 +227,11 @@ func HandlerWithOptions(si ServerInterface, options ChiServerOptions) http.Handl
 		ErrorHandlerFunc:   options.ErrorHandlerFunc,
 	}
 
-	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/lists", wrapper.GetLists)
-	})
+	r.HandleFunc(options.BaseURL+"/chores", wrapper.GetChores).Methods("GET")
+
+	r.HandleFunc(options.BaseURL+"/chores/{choreId}/completed", wrapper.MarkChoreCompleted).Methods("PUT")
+
+	r.HandleFunc(options.BaseURL+"/lists", wrapper.GetLists).Methods("GET")
 
 	return r
 }

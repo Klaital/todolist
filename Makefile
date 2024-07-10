@@ -1,5 +1,5 @@
 
-internal/storage/queries/db.go: internal/storage/sqlc.yaml internal/storage/queries/*.sql internal/storage/migrations/*.sql
+internal/storage/db.go: internal/storage/sqlc.yaml internal/storage/queries/*.sql internal/storage/migrations/*.sql
 	@sqlc generate -f ./internal/storage/sqlc.yaml
 
 .PHONY: migrate-dev

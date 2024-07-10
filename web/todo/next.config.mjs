@@ -5,6 +5,7 @@ const nextConfig = {
 	output: "export",
 	distDir: "dist",
 	basePath: isProd ? "/web" : undefined,
+	images: { unoptimized: true },
 };
 
 export default nextConfig;

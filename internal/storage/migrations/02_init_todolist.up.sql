@@ -1,5 +1,5 @@
 CREATE TABLE todolists (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGSERIAL NOT NULL PRIMARY KEY,
     owner_id INTEGER NOT NULL,
     name VARCHAR(128) NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -9,7 +9,7 @@ CREATE TABLE todolists (
 CREATE INDEX list_owner ON todolists (owner_id);
 
 CREATE TABLE list_items (
-    id INTEGER NOT NULL PRIMARY KEY,
+    id BIGSERIAL NOT NULL PRIMARY KEY,
     todolist_id INTEGER NOT NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
